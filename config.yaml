@@ -1,0 +1,45 @@
+image:
+  width: 224
+  height: 224
+  channels: 3
+
+data:
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  splits_dir: "data/splits"
+  train_split: 0.70
+  validation_split: 0.15
+  test_split: 0.15
+  seed: 42
+
+augmentation:
+  horizontal_flip: true
+  vertical_flip: true
+  rotation_degrees: 15
+  brightness: 0.2
+  contrast: 0.2
+
+training:
+  batch_size: 32
+  epochs: 20
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  optimizer: "adam"
+  scheduler: "cosine"
+  early_stopping_patience: 5
+
+model:
+  name: "efficientnet_b0"
+  pretrained: true
+  num_classes: 6
+  checkpoint_dir: "models"
+
+localization:
+  method: "gradcam"
+
+evaluation:
+  metrics: ["accuracy", "precision", "recall", "f1", "confusion_matrix"]
+
+logging:
+  level: "INFO"
+  log_dir: "outputs/reports"
