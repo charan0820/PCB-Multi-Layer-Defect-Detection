@@ -6,6 +6,10 @@ Owner: Person 3 (Inference, Visualization & Application)
 
 from typing import Any, Dict
 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
 
 def visualize_prediction(image: Any, prediction: Dict[str, Any]) -> Any:
     """
@@ -21,7 +25,23 @@ def visualize_prediction(image: Any, prediction: Dict[str, Any]) -> Any:
         Image (or figure) with visual annotations, ready for display
         in the UI or saving to outputs/plots.
     """
-    pass
+    fig, ax = plt.subplots()
+    ax.imshow(image)
+
+    heatmap = prediction.get("heatmap")
+    if heatmap is not None:
+        ax.imshow(heatmap, cmap="jet", alpha=0.4)
+
+    bbox = prediction.get("bbox")
+    if bbox is not None:
+        x, y, w, h = bbox
+        ax.add_patch(patches.Rectangle((x, y), w, h, linewidth=2, edgecolor="red", facecolor="none"))
+
+    label = prediction.get("class", "UNKNOWN")
+    conf = prediction.get("confidence", 0.0)
+    ax.set_title(f"{label} ({conf:.1f}%)")
+    ax.axis("off")
+    return fig
 
 
 def plot_training_curves(history: Dict[str, Any], save_path: str = None) -> None:
