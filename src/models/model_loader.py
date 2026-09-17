@@ -5,6 +5,12 @@ Owner: Person 2 (ML Model & Training)
 """
 
 from typing import Any, Dict
+import json
+from pathlib import Path
+
+import torch
+
+from src.models.classifier import build_model
 
 
 def save_model(model: Any, path: str, metadata: Dict[str, Any] = None) -> None:
@@ -18,7 +24,11 @@ def save_model(model: Any, path: str, metadata: Dict[str, Any] = None) -> None:
         metadata: Additional reproducibility metadata to store
             alongside the weights.
     """
-    pass
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), path)
+    if metadata:
+        with open(f"{path}.json", "w") as f:
+            json.dump(metadata, f, indent=2)
 
 
 def load_model(path: str, model_name: str, num_classes: int) -> Any:
@@ -34,4 +44,7 @@ def load_model(path: str, model_name: str, num_classes: int) -> Any:
     Returns:
         Model instance with loaded weights, ready for inference.
     """
-    pass
+    model = build_model(num_classes, model_name, pretrained=False)
+    model.load_state_dict(torch.load(path, map_location="cpu"))
+    model.eval()
+    return model

@@ -10,6 +10,20 @@ model, then compare alternatives if time permits.
 
 from typing import Any
 
+import torch.nn as nn
+import torchvision.models as tvm
+
+_ARCHS = {
+    "resnet18": ("fc",),
+    "mobilenet_v3": ("classifier", -1),
+    "efficientnet_b0": ("classifier", -1),
+}
+_BUILDERS = {
+    "resnet18": tvm.resnet18,
+    "mobilenet_v3": tvm.mobilenet_v3_small,
+    "efficientnet_b0": tvm.efficientnet_b0,
+}
+
 
 def build_model(num_classes: int, model_name: str = "efficientnet_b0", pretrained: bool = True) -> Any:
     """
@@ -25,7 +39,14 @@ def build_model(num_classes: int, model_name: str = "efficientnet_b0", pretraine
     Returns:
         Instantiated model ready for training or inference.
     """
-    pass
+    builder = _BUILDERS.get(model_name, _BUILDERS["efficientnet_b0"])
+    model = builder(weights="DEFAULT" if pretrained else None)
+    if model_name == "resnet18":
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+    else:
+        in_f = model.classifier[-1].in_features
+        model.classifier[-1] = nn.Linear(in_f, num_classes)
+    return model
 
 
 def freeze_backbone(model: Any) -> Any:
@@ -39,7 +60,10 @@ def freeze_backbone(model: Any) -> Any:
     Returns:
         Model with backbone parameters frozen.
     """
-    pass
+    for name, param in model.named_parameters():
+        if "fc" not in name and "classifier" not in name:
+            param.requires_grad = False
+    return model
 
 
 def unfreeze_backbone(model: Any) -> Any:
@@ -52,4 +76,6 @@ def unfreeze_backbone(model: Any) -> Any:
     Returns:
         Model with all parameters trainable.
     """
-    pass
+    for param in model.parameters():
+        param.requires_grad = True
+    return model

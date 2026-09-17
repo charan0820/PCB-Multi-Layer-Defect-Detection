@@ -20,11 +20,11 @@ Flow:
 
 from typing import Any
 
-# from src.utils.config import load_config
-# from src.models.model_loader import load_model
-# from src.data.preprocessing import preprocess_image
-# from src.inference.predict import predict
-# from src.visualization.visualize import visualize_prediction
+from src.models.model_loader import load_model
+from src.data.preprocessing import preprocess_image
+from src.inference.predict import predict, _to_tensor
+from src.models.detector import build_localizer, localize_defect
+from src.visualization.visualize import visualize_prediction
 
 
 def load_app_model(config: dict) -> Any:
@@ -38,7 +38,8 @@ def load_app_model(config: dict) -> Any:
     Returns:
         Loaded model instance.
     """
-    pass
+    mcfg = config["model"]
+    return load_model(f"{mcfg['checkpoint_dir']}/best.pt", mcfg["name"], mcfg["num_classes"])
 
 
 def run_inference_pipeline(uploaded_image: Any, model: Any, config: dict) -> dict:
@@ -55,7 +56,16 @@ def run_inference_pipeline(uploaded_image: Any, model: Any, config: dict) -> dic
         Dictionary with prediction results and the visualized image,
         ready to be rendered in the UI.
     """
-    pass
+    icfg = config["image"]
+    processed = preprocess_image(uploaded_image, (icfg["width"], icfg["height"]))
+    result = predict(processed, model)
+
+    method = config.get("localization", {}).get("method", "gradcam")
+    localizer = build_localizer(model, method)
+    result.update(localize_defect(localizer, _to_tensor(processed), result["class"]))
+
+    fig = visualize_prediction(uploaded_image, result)
+    return {"prediction": result, "figure": fig}
 
 
 def main() -> None:
