@@ -20,7 +20,8 @@ def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
     Returns:
         Dictionary containing all configuration parameters.
     """
-    pass
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
 
 
 def get_param(config: Dict[str, Any], key_path: str, default: Any = None) -> Any:
@@ -38,4 +39,9 @@ def get_param(config: Dict[str, Any], key_path: str, default: Any = None) -> Any
     Returns:
         The requested configuration value, or default if missing.
     """
-    pass
+    node = config
+    for key in key_path.split("."):
+        if not isinstance(node, dict) or key not in node:
+            return default
+        node = node[key]
+    return node

@@ -52,7 +52,20 @@ def plot_training_curves(history: Dict[str, Any], save_path: str = None) -> None
         history: Metrics history returned by train_model().
         save_path: Optional path to save the resulting plot.
     """
-    pass
+    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+    axes[0].plot(history["train_loss"], label="train")
+    axes[0].plot(history["val_loss"], label="val")
+    axes[0].set_title("Loss")
+    axes[0].legend()
+
+    axes[1].plot(history["train_acc"], label="train")
+    axes[1].plot(history["val_acc"], label="val")
+    axes[1].set_title("Accuracy")
+    axes[1].legend()
+
+    if save_path:
+        fig.savefig(save_path)
+    return fig
 
 
 def plot_confusion_matrix(confusion_matrix: Any, class_names: list, save_path: str = None) -> None:
@@ -64,4 +77,16 @@ def plot_confusion_matrix(confusion_matrix: Any, class_names: list, save_path: s
         class_names: List of class label names.
         save_path: Optional path to save the resulting plot.
     """
-    pass
+    fig, ax = plt.subplots()
+    im = ax.imshow(confusion_matrix, cmap="Blues")
+    ax.set_xticks(range(len(class_names)))
+    ax.set_yticks(range(len(class_names)))
+    ax.set_xticklabels(class_names, rotation=45)
+    ax.set_yticklabels(class_names)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Actual")
+    fig.colorbar(im)
+
+    if save_path:
+        fig.savefig(save_path)
+    return fig

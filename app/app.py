@@ -19,6 +19,9 @@ Flow:
 """
 
 from typing import Any
+import time
+
+import streamlit as st
 
 from src.models.model_loader import load_model
 from src.data.preprocessing import preprocess_image
@@ -68,6 +71,27 @@ def run_inference_pipeline(uploaded_image: Any, model: Any, config: dict) -> dic
     return {"prediction": result, "figure": fig}
 
 
+def format_report(prediction: dict, class_names: list, model_name: str) -> str:
+    """
+    Format a prediction into the standard PCB Inspection Result report
+    (see spec section 12).
+    """
+    idx = prediction["class"]
+    label = class_names[idx] if idx < len(class_names) else f"class_{idx}"
+    status = "PASS" if label.upper() == "PASS" else "DEFECTIVE"
+
+    lines = ["PCB Inspection Result", "", f"Status: {status}"]
+    if status == "DEFECTIVE":
+        lines.append(f"Defect Type: {label}")
+    lines += [
+        f"Confidence: {prediction['confidence']:.1f}%",
+        "",
+        f"Model: {model_name}",
+        f"Processing Time: {prediction['processing_time_ms']:.1f} ms",
+    ]
+    return "\n".join(lines)
+
+
 def main() -> None:
     """
     Entry point for the UI application (e.g. Streamlit app).
@@ -75,7 +99,26 @@ def main() -> None:
     Should not contain any training logic. Only orchestrates the
     upload -> preprocess -> predict -> visualize -> display flow.
     """
-    pass
+    st.title("PCB Defect Detection")
+
+    from src.utils.config import load_config
+    config = load_config("config.yaml")
+    class_names = config.get("model", {}).get("class_names", ["PASS", "DEFECT"])
+
+    uploaded = st.file_uploader("Upload PCB image", type=["png", "jpg", "jpeg"])
+    if uploaded is None:
+        return
+
+    import numpy as np
+    from PIL import Image
+    image = np.array(Image.open(uploaded).convert("RGB"))
+    st.image(image, caption="Original image")
+
+    model = load_app_model(config)
+    out = run_inference_pipeline(image, model, config)
+
+    st.pyplot(out["figure"])
+    st.text(format_report(out["prediction"], class_names, config["model"]["name"]))
 
 
 if __name__ == "__main__":
