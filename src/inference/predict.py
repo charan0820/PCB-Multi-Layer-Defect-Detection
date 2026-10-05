@@ -63,3 +63,31 @@ def batch_predict(images: Any, model: Any) -> Any:
         List of prediction dictionaries, one per image.
     """
     return [predict(img, model) for img in images]
+
+
+def predict_fusion(optical_image: Any, ct_image: Any, model: Any) -> Dict[str, Any]:
+    """
+    Run inference using a dual-branch optical+CT fusion model
+    (src.models.classifier.FusionModel).
+
+    Args:
+        optical_image: Preprocessed optical PCB image.
+        ct_image: Preprocessed CT scan image (single channel).
+        model: Loaded FusionModel instance.
+
+    Returns:
+        Same prediction dict shape as predict().
+    """
+    model.eval()
+    x_opt = _to_tensor(optical_image)
+    x_ct = _to_tensor(ct_image)
+    t0 = time.time()
+    with torch.no_grad():
+        probs = F.softmax(model(x_opt, x_ct), dim=1)
+        conf, idx = probs.max(dim=1)
+    elapsed_ms = (time.time() - t0) * 1000
+    return {
+        "class": int(idx.item()),
+        "confidence": float(conf.item() * 100),
+        "processing_time_ms": elapsed_ms,
+    }
