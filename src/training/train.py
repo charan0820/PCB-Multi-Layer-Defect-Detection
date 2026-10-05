@@ -4,8 +4,9 @@ Training pipeline.
 Owner: Person 2 (ML Model & Training)
 """
 
-from typing import Any, Dict
+from typing import Any, Callable, Dict, List
 
+import copy
 import torch
 import torch.nn as nn
 
@@ -91,3 +92,44 @@ def train_one_epoch(model: Any, train_loader: Any, optimizer: Any, criterion: An
         total += images.size(0)
 
     return {"loss": total_loss / total, "accuracy": correct / total}
+
+
+def tune_hyperparameters(
+    build_model_fn: Callable[[], Any],
+    train_loader: Any,
+    val_loader: Any,
+    base_config: Dict[str, Any],
+    param_grid: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Run a small grid search over training hyperparameters.
+
+    Args:
+        build_model_fn: Zero-arg callable returning a fresh model instance
+            (so each trial starts from the same initialization).
+        train_loader: Training DataLoader.
+        val_loader: Validation DataLoader.
+        base_config: Full project configuration; "training" section is
+            overridden per trial with values from param_grid.
+        param_grid: List of training-hyperparameter override dicts,
+            e.g. [{"learning_rate": 0.01}, {"learning_rate": 0.001}].
+
+    Returns:
+        Dict with "best_params", "best_val_acc", and "results" (per-trial
+        val accuracy).
+    """
+    results = []
+    best_val_acc, best_params = -1.0, None
+
+    for params in param_grid:
+        trial_config = copy.deepcopy(base_config)
+        trial_config["training"].update(params)
+
+        _, history = train_model(build_model_fn(), train_loader, val_loader, trial_config)
+        val_acc = history["val_acc"][-1]
+        results.append({"params": params, "val_acc": val_acc})
+
+        if val_acc > best_val_acc:
+            best_val_acc, best_params = val_acc, params
+
+    return {"best_params": best_params, "best_val_acc": best_val_acc, "results": results}
