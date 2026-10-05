@@ -10,6 +10,7 @@ model, then compare alternatives if time permits.
 
 from typing import Any
 
+import torch
 import torch.nn as nn
 import torchvision.models as tvm
 
@@ -79,3 +80,58 @@ def unfreeze_backbone(model: Any) -> Any:
     for param in model.parameters():
         param.requires_grad = True
     return model
+
+
+class FusionModel(nn.Module):
+    """
+    Dual-branch fusion model: one encoder for the optical image, one for
+    the CT scan, feature embeddings concatenated into a shared head.
+    """
+
+    def __init__(self, optical_backbone: nn.Module, ct_backbone: nn.Module, feat_dim: int, num_classes: int):
+        super().__init__()
+        self.optical_backbone = optical_backbone
+        self.ct_backbone = ct_backbone
+        self.head = nn.Linear(feat_dim * 2, num_classes)
+
+    def forward(self, optical, ct):
+        f_opt = self.optical_backbone(optical)
+        f_ct = self.ct_backbone(ct)
+        return self.head(torch.cat([f_opt, f_ct], dim=1))
+
+
+def build_fusion_model(num_classes: int, model_name: str = "resnet18", pretrained: bool = True) -> FusionModel:
+    """
+    Build a dual-branch optical+CT fusion model, reusing build_model()
+    for each branch's backbone with its classification head stripped off.
+
+    Args:
+        num_classes: Number of PCB defect classes.
+        model_name: Backbone architecture for both branches.
+        pretrained: Whether to initialize branches with pretrained weights.
+
+    Returns:
+        FusionModel instance.
+    """
+    optical = build_model(num_classes, model_name, pretrained)
+    ct = build_model(num_classes, model_name, pretrained)
+
+    if model_name == "resnet18":
+        feat_dim = optical.fc.in_features
+        optical.fc = nn.Identity()
+        ct.fc = nn.Identity()
+    else:
+        feat_dim = optical.classifier[-1].in_features
+        optical.classifier[-1] = nn.Identity()
+        ct.classifier[-1] = nn.Identity()
+
+    if model_name == "resnet18":
+        old = ct.conv1
+        ct.conv1 = nn.Conv2d(1, old.out_channels, kernel_size=old.kernel_size,
+                              stride=old.stride, padding=old.padding, bias=False)
+    else:
+        old = ct.features[0][0]
+        ct.features[0][0] = nn.Conv2d(1, old.out_channels, kernel_size=old.kernel_size,
+                                       stride=old.stride, padding=old.padding, bias=False)
+
+    return FusionModel(optical, ct, feat_dim, num_classes)
