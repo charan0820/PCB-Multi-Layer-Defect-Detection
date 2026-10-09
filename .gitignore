@@ -8,3 +8,7 @@ env/
 data/
 node_modules/
 src/visualization/*.png
+runs/
+*.pt
+outputs/predictions/
+.pytest_cache/
