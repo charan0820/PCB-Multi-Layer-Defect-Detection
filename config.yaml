@@ -33,6 +33,13 @@ model:
   pretrained: true
   num_classes: 6
   checkpoint_dir: "models"
+  class_names:
+    - "missing_hole"
+    - "mouse_bite"
+    - "open_circuit"
+    - "short"
+    - "spur"
+    - "spurious_copper"
 
 localization:
   method: "gradcam"

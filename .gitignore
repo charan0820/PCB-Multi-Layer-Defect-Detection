@@ -7,3 +7,4 @@ env/
 .idea/
 data/
 node_modules/
+src/visualization/*.png
