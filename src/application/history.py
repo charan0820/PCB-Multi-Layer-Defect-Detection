@@ -28,7 +28,7 @@ def save_scan(path, payload):
         connection.close()
 
 
-def statistics(path, hours=24):
+def statistics(path, hours=24, mode=None):
     since = (datetime.now(timezone.utc) - timedelta(hours=hours)).isoformat()
     connection = connect(path)
     try:
@@ -36,6 +36,8 @@ def statistics(path, hours=24):
             "SELECT payload FROM scans WHERE created_at >= ? ORDER BY created_at DESC", (since,))]
     finally:
         connection.close()
+    if mode is not None:
+        records = [record for record in records if record.get("mode") == mode]
     counts, timeline = Counter(), Counter()
     for record in records:
         counts.update(d["class_name"] for d in record["detections"])

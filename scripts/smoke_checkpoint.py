@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from PIL import Image
-from src.application.inspection import PCB_CLASSES, decode_image, resolve_checkpoint, run_worker
+from src.application.inspection import is_pcb_model, decode_image, resolve_checkpoint, run_worker
 from src.application.reports import render_overlay
 from src.inference.predict import filter_detections
 
@@ -27,7 +27,7 @@ def main():
         overlay = render_overlay(image, result)
         print(f"Cutoff={cutoff:.2f}; regions={result['defect_count']}; PNG bytes={len(overlay)}")
     print("Inference and repeated threshold rendering succeeded.")
-    if len(output["names"]) != 6 or frozenset(output["names"]) != PCB_CLASSES:
+    if not is_pcb_model(output["names"]):
         print("NOT A PCB CHECKPOINT: the dashboard will reject these weights. Supply trained best.pt.")
         return 2
     if not args.image:

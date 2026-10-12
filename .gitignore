@@ -1,18 +1,31 @@
+# Python environments and caches
 __pycache__/
-/src/__pycache__/
-*.pyc
+*.py[cod]
+.pytest_cache/
 venv/
 env/
 .venv/
+
+# Editor and frontend dependencies
 .idea/
+node_modules/
+
+# Local datasets and Ultralytics label caches
 data/processed
 data/raw
 data/splits
-node_modules/
-src/visualization/*.png
+data/deeppcb_yolo/
+data/deeppcb_regenerated/
+*.cache
+
+# Training runs, weights, and local dataset/project archives
 runs/
 *.pt
+/*.zip
+
+# Generated application and validation artifacts
+src/visualization/*.png
 outputs/predictions/
-.pytest_cache/
+outputs/reviews/
 outputs/logs/
 outputs/*.sqlite3*

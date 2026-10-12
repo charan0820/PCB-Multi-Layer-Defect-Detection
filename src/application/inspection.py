@@ -16,6 +16,13 @@ MAX_BYTES = 15 * 1024 * 1024
 MAX_PIXELS = 20_000_000
 PCB_CLASSES = frozenset(("mouse_bite", "spur", "missing_hole", "short", "open_circuit", "spurious_copper"))
 
+DEEPPCB_CLASSES = frozenset(("open", "short", "mousebite", "spur", "copper", "pin-hole"))
+
+
+def is_pcb_model(names):
+    """Accept either known taxonomy; a pin hole is distinct from a missing hole."""
+    return len(names) == 6 and frozenset(names) in (PCB_CLASSES, DEEPPCB_CLASSES)
+
 
 def decode_image(data: bytes) -> Image.Image:
     """Validate size/format, apply EXIF orientation and return detached RGB pixels."""

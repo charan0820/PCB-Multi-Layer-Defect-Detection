@@ -10,7 +10,7 @@ import pytest
 from PIL import Image
 from streamlit.testing.v1 import AppTest
 
-from src.application.inspection import decode_image, inspection_key, run_worker, PCB_CLASSES
+from src.application.inspection import decode_image, inspection_key, run_worker, PCB_CLASSES, DEEPPCB_CLASSES
 from src.application.reports import render_overlay, build_report, report_payload
 from src.application.history import save_scan, statistics
 from src.inference.predict import filter_detections
@@ -85,23 +85,27 @@ def test_worker_native_exit_and_timeout_leave_parent_alive():
             run_worker(Path("fake.pt"), timeout=1)
 
 
-def test_app_threshold_downloads_and_history_do_not_rerun_inference(tmp_path, monkeypatch):
+@pytest.mark.parametrize("classes", [PCB_CLASSES, DEEPPCB_CLASSES])
+def test_app_threshold_downloads_and_history_do_not_rerun_inference(tmp_path, monkeypatch, classes):
     checkpoint = tmp_path / "best.pt"
     checkpoint.write_bytes(b"fixture")
     cfg = {"model": {"best_checkpoint": str(checkpoint)}, "image": {"width": 640},
            "data": {"raw_dir": "no-dataset"}, "inference": {"confidence_threshold": .25},
-           "application": {"database": str(tmp_path / "ui.sqlite3")}}
+           "application": {"database": str(tmp_path / "ui.sqlite3"),
+                           "modes": {"optical_bw": {"checkpoint": str(checkpoint)}}}}
     calls = []
     def worker(path, image=None, **kwargs):
         if image is not None:
             calls.append(1)
-        return {"names": list(PCB_CLASSES), "prediction": raw_result()}
+        return {"names": list(classes), "prediction": raw_result()}
     upload = io.BytesIO(image_bytes())
     upload.name = 'pcb.png'
     monkeypatch.setattr("src.application.inspection.run_worker", worker)
     monkeypatch.setattr("src.utils.config.load_config", lambda path: cfg)
     with patch("streamlit.file_uploader", return_value=upload):
         app = AppTest.from_file(str(ROOT / "app/app.py"), default_timeout=20).run()
+        if classes == PCB_CLASSES:
+            app.selectbox(key="inspection_mode").set_value("surface").run()
         assert not app.exception
         app.button[0].click().run()
         assert not app.exception
@@ -122,3 +126,57 @@ def test_app_threshold_downloads_and_history_do_not_rerun_inference(tmp_path, mo
         assert not app.exception
         assert len(calls) == 1
         assert statistics(tmp_path / "ui.sqlite3")["scans"] == 2
+
+
+def test_mode_switch_rejects_other_taxonomy_and_disables_ct(tmp_path, monkeypatch):
+    checkpoint = tmp_path / "best.pt"
+    checkpoint.write_bytes(b"fixture")
+    cfg = {"model": {"best_checkpoint": str(checkpoint)}, "image": {"width": 640},
+           "data": {"raw_dir": "no-dataset"}, "inference": {},
+           "application": {"database": str(tmp_path / "ui.sqlite3"),
+                           "modes": {"optical_bw": {"checkpoint": str(checkpoint)}}}}
+    calls = []
+    def worker(path, image=None, **kwargs):
+        calls.append(image)
+        return {"names": list(DEEPPCB_CLASSES), "prediction": raw_result()}
+    monkeypatch.setattr("src.application.inspection.run_worker", worker)
+    monkeypatch.setattr("src.utils.config.load_config", lambda path: cfg)
+    app = AppTest.from_file(str(ROOT / "app/app.py"), default_timeout=20).run()
+    app.slider(key="threshold_optical_bw").set_value(.65).run()
+    app.selectbox(key="device_optical_bw").set_value("0").run()
+    app.selectbox(key="inspection_mode").set_value("surface").run()
+    assert not app.exception
+    assert app.button[0].disabled
+    assert any("does not match" in e.value for e in app.error)
+    assert app.slider(key="threshold_surface").value == .25
+    app.selectbox(key="inspection_mode").set_value("ct").run()
+    assert not app.exception
+    assert any("Not configured" in i.value for i in app.info)
+    assert len(app.button) == 0
+    before = len(calls)
+    app.run()
+    assert len(calls) == before
+    app.selectbox(key="inspection_mode").set_value("optical_bw").run()
+    assert app.slider(key="threshold_optical_bw").value == .65
+    assert app.selectbox(key="device_optical_bw").value == "0"
+
+
+def test_mode_reports_and_history_are_separate(tmp_path):
+    result = filter_detections(raw_result(), .25)
+    db = tmp_path / "modes.sqlite3"
+    for mode in ("surface", "optical_bw"):
+        info = {**metadata(), "mode": mode, "scan_id": mode}
+        report, data = build_report(result, info, render_overlay(decode_image(image_bytes()), result))
+        payload = json.loads(data)
+        assert payload["mode"] == mode
+        assert payload["accuracy"] is None
+        if mode == "optical_bw":
+            assert "no template comparison" in payload["scope"]
+            assert b"Optical B/W" in report
+        save_scan(db, payload)
+    save_scan(db, report_payload(result, metadata()))  # Legacy records remain preserved.
+    assert statistics(db)["scans"] == 3
+    for mode in ("surface", "optical_bw"):
+        stats = statistics(db, mode=mode)
+        assert stats["scans"] == 1
+        assert stats["records"][0]["mode"] == mode

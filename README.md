@@ -1,6 +1,21 @@
-# PCB Surface Inspection Prototype
+# PCB Inspection Studio
 
-This application detects optical PCB surface defects using an existing trained Ultralytics YOLO checkpoint. It does not perform CT, X-ray or internal multilayer inspection. This repair does not train a second model or implement camera hardware.
+The application has three modes: **Surface**, **Optical B/W** and **CT scans**.
+Surface uses the original surface detector; Optical B/W uses the separate DeepPCB
+detector. Each optical mode retains its own checkpoint, device, image size, IoU and
+confidence settings. CT scans displays **Not configured** until a separate model
+and CT processing pipeline are ready. CT and camera hardware are not implemented.
+
+Reports record the selected mode and its scope, and filenames include the mode.
+SQLite statistics filter by mode. Existing scans without mode metadata remain in
+the database and are excluded from mode-specific totals. Checkpoints with the wrong
+mode's taxonomy and generic pretrained models are rejected.
+
+See [TRAINING_REVIEW.md](TRAINING_REVIEW.md) for the completed local DeepPCB run.
+
+## DeepPCB training
+
+Start with [START_TRAINING.md](START_TRAINING.md). Includes dataset conversion, paired-image retention, provenance, GPU training, resume and held-out test evaluation. The app accepts DeepPCB classes `open`, `short`, `mousebite`, `spur`, `copper`, `pin-hole` as well as the original taxonomy.
 
 ## Run the repaired application
 
@@ -17,7 +32,13 @@ python -m streamlit run app/app.py --server.fileWatcherType none
 On Linux/macOS activate with `source .venv/bin/activate`.
 For CPU-only PyTorch, install `torch torchvision --index-url https://download.pytorch.org/whl/cpu` before the requirements. For CUDA use the appropriate PyTorch installation for your GPU. CPU is the default during crash diagnosis.
 
-**Required checkpoint:** copy your PCB-trained `best.pt` to `runs/pcb_defect/baseline/weights/best.pt`, or enter its local path in the sidebar. The uploaded `yolo11n.pt` and `yolo26n.pt` each contain 80 general object classes, not the six PCB classes. They are intentionally rejected by the dashboard. No weights or datasets are bundled in this delivery.
+**Checkpoints:** Surface defaults to `runs/pcb_defect/baseline/weights/best.pt`;
+Optical B/W defaults to `runs/deeppcb/yolo11n_baseline/weights/best.pt` and opens by
+default. Enter the actual full-run path if training created an incremented folder.
+Trained weights are local artifacts and are not included in Git. Generic
+`yolo11n.pt` / `yolo26n.pt` are pretrained starting weights and are rejected for
+inspection. The converted DeepPCB dataset is bundled; follow
+[START_TRAINING.md](START_TRAINING.md) for RTX 4050 training and validation review.
 
 Expected checkpoint class names (order is taken from the checkpoint): `mouse_bite`, `spur`, `missing_hole`, `short`, `open_circuit`, `spurious_copper`.
 
@@ -78,4 +99,4 @@ The existing training/evaluation scripts remain available (`scripts/train_yolo.p
 
 Place the PCB flat in a repeatable jig within a matte enclosure. Mount a close-focus USB camera vertically above it; surround the lens with a diffuse ring light to reduce glare. Choose magnification after measuring the smallest defect you need to see; pixel coverage and repeatable focus matter more than nominal camera megapixels. Use a suitable regulated supply for the light. Connect the camera by USB to the laptop running this app; a saved JPEG/PNG enters the current upload pipeline. Validate on labeled images from this setup before claiming camera performance. No hardware integration is included.
 
-DeepPCB contains paired optical template/test images captured with a linear-scan CCD, not CT scans: https://github.com/tangsanli5201/DeepPCB. Training on DeepPCB alone does not enable internal-layer inspection. A future CT model needs suitable CT data and a separate acquisition/validation plan. The second model is deferred until this prototype passes acceptance with the trained PCB checkpoint.
+DeepPCB contains paired optical template/test images captured with a linear-scan CCD, not CT scans: https://github.com/tangsanli5201/DeepPCB. The baseline uses the defective image alone. A future CT model needs suitable CT data and a separate acquisition/validation plan. PCB-CTSeg is a proposed structural segmentation dataset for pads, traces and vias; its labels do not establish manufacturing defect detection.

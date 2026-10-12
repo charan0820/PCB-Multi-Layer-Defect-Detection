@@ -6,6 +6,7 @@ import io
 import json
 
 from PIL import ImageDraw, ImageFont
+from src.application.modes import MODES
 
 COLORS = ["#d32752", "#168441", "#9b7800", "#2559c5", "#bd590b", "#883eaf"]
 
@@ -39,7 +40,7 @@ def report_payload(result, metadata):
     """Only retained detections are exported; never leak hidden raw candidates."""
     return {**metadata, **{key: value for key, value in result.items() if key != "raw_detections"},
             "defect_types": dict(Counter(d["class_name"] for d in result["detections"])),
-            "scope": "Surface optical inspection only; no X-ray or internal layer inspection.",
+            "scope": MODES[metadata.get("mode", "surface")]["scope"],
             "accuracy": None,
             "accuracy_note": "Not measurable without labeled ground truth. Detection confidence is not accuracy."}
 
@@ -47,7 +48,9 @@ def report_payload(result, metadata):
 def build_report(result, metadata, overlay):
     payload = report_payload(result, metadata)
     escape = lambda value: html.escape(str(value), quote=True)
-    fields = {"Scan ID": payload["scan_id"], "UTC timestamp": payload["created_at"],
+    mode_label = MODES[payload.get("mode", "surface")]["label"]
+    fields = {"Inspection mode": mode_label, "Scope": payload["scope"],
+              "Scan ID": payload["scan_id"], "UTC timestamp": payload["created_at"],
               "PCB ID": payload["pcb_id"], "Source": payload["filename"],
               "Image size": payload["dimensions"], "Checkpoint": payload["model_path"],
               "Model identity": payload["checkpoint_identity"], "Device": payload["device"],
@@ -63,10 +66,10 @@ def build_report(result, metadata, overlay):
 <style>body{{font:15px system-ui;color:#142b3c;max-width:960px;margin:40px auto;padding:0 24px}}
 h1{{color:#087e78}}table{{border-collapse:collapse;width:100%;margin:20px 0}}td,th{{padding:9px;border-bottom:1px solid #ddd;text-align:left;overflow-wrap:anywhere}}
 img{{max-width:100%}}.note{{background:#eef6f6;padding:16px}}@media print{{body{{margin:0}}img{{max-height:650px}}tr{{break-inside:avoid}}}}</style>
-<h1>PCB Surface Inspection</h1><table>{summary}</table>
+<h1>PCB {escape(mode_label)} Inspection</h1><table>{summary}</table>
 <img alt="Detected PCB regions" src="data:image/png;base64,{picture}">
 <h2>Detected regions</h2><table><tr><th>#</th><th>Defect type</th><th>Confidence</th><th>Bounding box (pixels)</th></tr>{rows}</table>
 <p class="note">No detected defects means none exceeded the selected cutoff; it does not certify a defect-free PCB.
 Detection confidence is not an accuracy score. Accuracy requires labeled ground truth.<br>
-Surface optical inspection only. No X-ray or internal layer analysis.</p></html>'''
+{escape(payload["scope"])}</p></html>'''
     return document.encode("utf-8"), json.dumps(payload, indent=2).encode("utf-8")

@@ -51,3 +51,16 @@ logging:
 
 application:
   database: "outputs/inspection.sqlite3"
+  modes:
+    surface:
+      checkpoint: "runs/pcb_defect/baseline/weights/best.pt"
+      device: "cpu"
+      imgsz: 640
+      confidence_threshold: 0.25
+      iou_threshold: 0.45
+    optical_bw:
+      checkpoint: "runs/deeppcb/yolo11n_baseline/weights/best.pt"
+      device: "cpu"
+      imgsz: 640
+      confidence_threshold: 0.25
+      iou_threshold: 0.45
