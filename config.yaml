@@ -37,6 +37,7 @@ training:
   name: "baseline"
 
 inference:
+  device: "cpu"
   confidence_threshold: 0.25
   iou_threshold: 0.45
 
@@ -47,3 +48,6 @@ evaluation:
 logging:
   level: "INFO"
   log_dir: "outputs/reports"
+
+application:
+  database: "outputs/inspection.sqlite3"

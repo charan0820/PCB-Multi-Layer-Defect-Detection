@@ -1,117 +1,81 @@
-# PCB Defect Detection System (Visual Prototype)
+# PCB Surface Inspection Prototype
 
-An end-to-end computer-vision system for automated visual inspection of printed circuit board (PCB) defects using deep learning object detection (Ultralytics YOLO11n).
+This application detects optical PCB surface defects using an existing trained Ultralytics YOLO checkpoint. It does not perform CT, X-ray or internal multilayer inspection. This repair does not train a second model or implement camera hardware.
 
----
+## Run the repaired application
 
-## 1. Project Objectives & Problem Statement
+Use Python 3.10–3.12. From the extracted project root:
 
-Manual quality inspection of printed circuit boards is error-prone, labor-intensive, and inconsistent at scale. Microscopic copper and substrate flaws—such as mouse bites, spurious copper, or hairline open circuits—can cause intermittent board failure or complete system breakdown.
-
-This project delivers an automated visual inspection assistance prototype that:
-1. Accepts optical PCB surface images.
-2. Detects, localizes, and classifies defect regions into six standard defect categories.
-3. Quantifies detection confidence and overlays precise bounding boxes and labels.
-4. Generates structured inspection reports with defect counts and processing latencies.
-5. Surfaces inspection results in an interactive web application suitable for laboratory and pitch demonstration.
-
----
-
-## 2. Critical Prototype Limitations
-
-> **Academic Prototype Notice:**  
-> The current prototype performs dataset-based visual PCB defect detection using annotated surface PCB images. It does not perform X-ray imaging or verified internal multilayer inspection. Detections provide quality-control inspection assistance and are not certified manufacturing quality guarantees. Future work may integrate controlled optical imaging hardware and evaluate its suitability for different PCB inspection conditions.
-
----
-
-## 3. Dataset & Supported Defect Classes
-
-The prototype is trained and evaluated on the standardized YOLO PCB defect dataset containing **10,668 images** and **21,664 annotated defect instances** across train, validation, and test splits.
-
-### Supported Defect Categories (Classes 0–5)
-* `0`: **mouse_bite** — Edge notch / substrate void defect
-* `1`: **spur** — Unintended copper projection protruding from a trace
-* `2`: **missing_hole** — Drilled via or through-hole absent from designated pad
-* `3`: **short** — Unintended conductor bridge linking adjacent copper traces
-* `4`: **open_circuit** — Discontinuous trace / broken conductor line
-* `5`: **spurious_copper** — Stray, isolated copper artifact left after etching
-
-### Split Breakdown
-| Split | Images | Defect Instances |
-| :--- | :---: | :---: |
-| **Train** | 8,534 | 17,342 |
-| **Validation** | 1,066 | 2,164 |
-| **Test (Held-Out)** | 1,068 | 2,158 |
-| **Total** | **10,668** | **21,664** |
-
----
-
-## 4. Architecture & Pipeline
-
-* **Detector Architecture:** Ultralytics YOLO11n (nano), 101 layers, 2.58M parameters, 6.3 GFLOPs.
-* **Input Resolution:** 640 × 640 pixels (RGB).
-* **Hardware:** CUDA-accelerated on NVIDIA GeForce RTX 4050 Laptop GPU (6 GB VRAM).
-* **Inference Pipeline:** Image ingestion $\rightarrow$ Tensor preprocessing $\rightarrow$ YOLO11n detection $\rightarrow$ Non-maximum suppression $\rightarrow$ Bounding box & label visualization.
-* **Separation of Concerns:** Input image acquisition is decoupled from inference, allowing future camera adapters (`CameraInput`) to plug directly into the pipeline.
-
----
-
-## 5. Measured Evaluation Results
-
-Evaluated on held-out test and validation sets:
-
-### Test Set Performance (1,068 Images, 2,158 Instances)
-* **Precision (P):** `0.8320` (83.2%)
-* **Recall (R):** `0.7183` (71.8%)
-* **mAP@50:** `0.8028` (80.3%)
-* **mAP@50-95:** `0.3603` (36.0%)
-* **Average Inference Latency:** `~4.75 ms` per image (~210 FPS on RTX 4050)
-
-#### Per-Class Breakdown (Test Set)
-| Class ID | Defect Name | Precision | Recall | mAP@50 |
-| :---: | :--- | :---: | :---: | :---: |
-| 0 | `mouse_bite` | 0.695 | 0.741 | 0.742 |
-| 1 | `spur` | 0.883 | 0.615 | 0.760 |
-| 2 | `missing_hole` | 0.989 | 0.960 | 0.986 |
-| 3 | `short` | 0.794 | 0.620 | 0.749 |
-| 4 | `open_circuit` | 0.898 | 0.652 | 0.810 |
-| 5 | `spurious_copper` | 0.733 | 0.722 | 0.770 |
-
----
-
-## 6. Quick Start & Execution Guide
-
-### Prerequisites
-* Python 3.10+
-* PyTorch & CUDA (optional but recommended for real-time inference)
-
-### 1. Install Dependencies
 ```powershell
-pip install -r requirements.txt
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m pytest tests/ -q
+python -m streamlit run app/app.py --server.fileWatcherType none
 ```
 
-### 2. Run Tests
+On Linux/macOS activate with `source .venv/bin/activate`.
+For CPU-only PyTorch, install `torch torchvision --index-url https://download.pytorch.org/whl/cpu` before the requirements. For CUDA use the appropriate PyTorch installation for your GPU. CPU is the default during crash diagnosis.
+
+**Required checkpoint:** copy your PCB-trained `best.pt` to `runs/pcb_defect/baseline/weights/best.pt`, or enter its local path in the sidebar. The uploaded `yolo11n.pt` and `yolo26n.pt` each contain 80 general object classes, not the six PCB classes. They are intentionally rejected by the dashboard. No weights or datasets are bundled in this delivery.
+
+Expected checkpoint class names (order is taken from the checkpoint): `mouse_bite`, `spur`, `missing_hole`, `short`, `open_circuit`, `spurious_copper`.
+
+## How it works
+
+1. Assign a PCB/batch ID and upload a JPEG or PNG (maximum 15 MB / 20 megapixels). EXIF orientation is applied; images become RGB. Ultralytics performs its own aspect-preserving letterboxing; the application does not stretch the image or apply training augmentation.
+2. Press **Inspect PCB**. Inference runs with a 0.01 candidate cutoff, configured image size and IoU. CPU is the stable default; CUDA GPU 0 is optional.
+3. Retained detections are filtered at the visible cutoff, drawn with Pillow and displayed beside the original image. Moving the slider never runs inference again.
+4. Download an annotated PNG, structured JSON or a complete standalone HTML report. Open the HTML in a browser and print/save as PDF. A report contains PCB ID, scan ID/time, source image hash (JSON), checkpoint identity, runtime, cutoff, per-region confidence and pixel coordinates plus annotated image.
+5. SQLite stores each explicit inspection once. Scan history shows counts by time period/hour and defect type, flagged scans and mean detection confidence. It refreshes every 10 seconds.
+
+History stores the cutoff selected when **Inspect PCB** was pressed. Slider previews/downloads reflect the current cutoff and do not alter history. Pressing Inspect again deliberately creates another scan snapshot; unchanged image/model settings reuse raw inference. Metadata edits take effect on the next explicit inspection. Original pixels and annotated images are kept only in the current browser session; the database retains metadata and detections, not image blobs.
+
+## Crash repair
+
+- Streamlit no longer loads PyTorch, CUDA or Matplotlib in its application process. Inference lives in a bounded subprocess; a worker access violation or timeout becomes an error message while the UI remains running. Each new image/model loads its model in the worker, so startup overhead is higher than a persistent GPU service.
+- Content SHA-256, checkpoint path/size/mtime, device, image size and IoU identify the cached candidates. Same-named/same-sized uploads no longer share results; changing checkpoints cannot silently reuse the previous model's predictions.
+- Downloads use Streamlit's `on_click="ignore"` and precomputed bytes. PNG exports always have a `.png` extension. HTML filename/text metadata is escaped.
+- Matplotlib is kept only for the existing offline visualization functions; the app draws native-size overlays with Pillow. Slider reruns replace one rendered view instead of accumulating figures.
+- No automatic fallback to generic pretrained weights. Original YOLO load errors are preserved instead of silently trying an incompatible classifier.
+- Watchers are disabled in `.streamlit/config.toml` and via the launch command. Worker, application and native fault logs are in `outputs/logs/`.
+
+These changes address failure-prone paths. The original silent Windows crash cannot be attributed to a specific DLL without its logs/dump. Validation was performed on Linux CPU; repeat the acceptance steps on the Windows/GPU setup before claiming that environment is fixed.
+
+## Verification
+
 ```powershell
-python -m pytest tests/
+python -m pytest tests/ -q
+python scripts/smoke_checkpoint.py runs/pcb_defect/baseline/weights/best.pt --image path/to/pcb.jpg
 ```
 
-### 3. Launch the Interactive Dashboard
-```powershell
-python -m streamlit run app/app.py
-```
-Open [http://localhost:8501](http://localhost:8501) in your browser.
+The smoke command runs the real checkpoint once, changes the cutoff repeatedly and renders PNGs. Generic weights exit with code 2 after execution, clearly indicating they cannot be used for PCB inspection. A blank synthetic image is used if `--image` is omitted; it checks execution, not accuracy.
 
-### 4. Run Model Training
-```powershell
-python scripts/train_yolo.py --epochs 15 --batch-size 16 --patience 5
-```
+Manual acceptance: upload a real PCB image, inspect, move the cutoff both directions, download all three formats repeatedly, and inspect a different image with the same filename. The server must remain alive, reports must match the preview, and history must not increment for slider changes/downloads. Then repeat with GPU selected if CUDA is installed. If failure occurs, retain `outputs/logs/app.log`, `app-native.log` and `inference.log`.
 
-### 5. Run Model Evaluation
-```powershell
-# Evaluate on held-out test split
-python scripts/evaluate_yolo.py --weights runs/pcb_defect/baseline/weights/best.pt --split test
+The raw dataset is optional for application tests. Two existing dataset integration tests skip when the dataset is absent; installing it enables them. No dataset, trained PCB checkpoint or original Windows crash dump was available for this repair. The uploaded generic models were exercised successfully on CPU. See `REPAIR_NOTES.md` for exact results.
 
-# Evaluate on validation split
-python scripts/evaluate_yolo.py --weights runs/pcb_defect/baseline/weights/best.pt --split val
-```
-Reports and metrics are saved to `outputs/reports/`.
+## Statistics and evaluation
+
+Detection confidence is not accuracy. Unlabeled uploads cannot yield a live accuracy score. The UI explicitly marks accuracy unavailable. The repository's historical test JSON reports precision 83.2%, recall 71.8%, mAP@50 80.3% and mAP@50–95 36.0%; those figures have not been reproduced in this repair or linked to the supplied checkpoints. A no-detection result does not prove a defect-free board.
+
+The existing training/evaluation scripts remain available (`scripts/train_yolo.py`, `scripts/evaluate_yolo.py`). Training is not part of this repair.
+
+## Project structure
+
+- `app/app.py`: Streamlit UI, explicit scan action, state and downloads.
+- `src/application/inspection.py`: upload validation, checkpoint identity and worker orchestration.
+- `src/application/worker.py`: isolated model loading/inference.
+- `src/application/reports.py`: Pillow overlay, printable HTML and JSON.
+- `src/application/history.py`: transactional SQLite scan history/statistics.
+- `src/inference/predict.py`: inference and pure-Python candidate filtering.
+- `src/models/model_loader.py`: checkpoint loading/saving.
+- Existing `src/data`, `src/training`, `src/evaluation`, `src/visualization`: dataset/training/offline utilities.
+- `tests/test_application.py`: rerun, report, history, invalid image and worker failure regression tests.
+- `.streamlit/config.toml`, `config.yaml`: watcher/theme and inference/database configuration.
+
+## Future optical setup for presentation only
+
+Place the PCB flat in a repeatable jig within a matte enclosure. Mount a close-focus USB camera vertically above it; surround the lens with a diffuse ring light to reduce glare. Choose magnification after measuring the smallest defect you need to see; pixel coverage and repeatable focus matter more than nominal camera megapixels. Use a suitable regulated supply for the light. Connect the camera by USB to the laptop running this app; a saved JPEG/PNG enters the current upload pipeline. Validate on labeled images from this setup before claiming camera performance. No hardware integration is included.
+
+DeepPCB contains paired optical template/test images captured with a linear-scan CCD, not CT scans: https://github.com/tangsanli5201/DeepPCB. Training on DeepPCB alone does not enable internal-layer inspection. A future CT model needs suitable CT data and a separate acquisition/validation plan. The second model is deferred until this prototype passes acceptance with the trained PCB checkpoint.

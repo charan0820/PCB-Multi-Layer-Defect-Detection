@@ -11,8 +11,6 @@ import time
 
 import numpy as np
 from PIL import Image
-import torch
-import torch.nn.functional as F
 
 _INFERENCE_LOCK = threading.Lock()
 
@@ -26,7 +24,8 @@ DEFECT_CLASS_NAMES = {
 }
 
 
-def _to_tensor(image: Any) -> torch.Tensor:
+def _to_tensor(image: Any) -> "torch.Tensor":
+    import torch
     x = torch.as_tensor(image).float()
     if x.dim() == 3:
         x = x.permute(2, 0, 1)
@@ -37,6 +36,7 @@ def predict(
     image: Any,
     model: Any,
     confidence_threshold: float = 0.25,
+    *, device: Optional[str] = None, imgsz: int = 640, iou: float = 0.45,
 ) -> Dict[str, Any]:
     """
     Run inference on a single PCB image.
@@ -56,7 +56,9 @@ def predict(
             - class: int (primary defect class ID or None)
             - confidence: float (primary defect confidence in %)
     """
-    t0 = time.time()
+    if not 0 <= confidence_threshold <= 1:
+        raise ValueError("Confidence threshold must be between 0 and 1.")
+    t0 = time.perf_counter()
 
     # Check if model is an Ultralytics YOLO detector
     if hasattr(model, "predict"):
@@ -72,13 +74,15 @@ def predict(
         else:
             img_input = image
 
+        options = {"device": device, "imgsz": imgsz, "iou": iou} if device is not None else {}
         with _INFERENCE_LOCK:
             results = model.predict(
                 source=img_input,
                 conf=confidence_threshold,
                 verbose=False,
+                **options,
             )
-        elapsed_ms = (time.time() - t0) * 1000
+        elapsed_ms = (time.perf_counter() - t0) * 1000
 
         detections = []
         if len(results) > 0 and results[0].boxes is not None:
@@ -87,7 +91,7 @@ def predict(
                 cls_id = int(boxes.cls[i].item())
                 conf_val = float(boxes.conf[i].item())
                 xyxy = boxes.xyxy[i].cpu().numpy().tolist()
-                cls_name = model.names.get(cls_id, DEFECT_CLASS_NAMES.get(cls_id, f"class_{cls_id}"))
+                cls_name = model.names[cls_id]
                 detections.append({
                     "class_id": cls_id,
                     "class_name": cls_name,
@@ -113,13 +117,15 @@ def predict(
         }
 
     # Fallback PyTorch classification model
+    import torch
+    import torch.nn.functional as F
     model.eval()
     x = _to_tensor(image)
     with _INFERENCE_LOCK:
         with torch.no_grad():
             probs = F.softmax(model(x), dim=1)
             conf, idx = probs.max(dim=1)
-    elapsed_ms = (time.time() - t0) * 1000
+    elapsed_ms = (time.perf_counter() - t0) * 1000
     cls_id = int(idx.item())
     conf_pct = float(conf.item() * 100)
 
@@ -155,6 +161,8 @@ def filter_detections(result: Dict[str, Any], confidence_threshold: float) -> Di
     Returns:
         New prediction result dict with filtered detections and updated summary.
     """
+    if not 0 <= confidence_threshold <= 1:
+        raise ValueError("Confidence threshold must be between 0 and 1.")
     raw = result.get("raw_detections", result.get("detections", []))
     filtered = []
     for d in raw:
@@ -164,12 +172,15 @@ def filter_detections(result: Dict[str, Any], confidence_threshold: float) -> Di
         if score >= confidence_threshold:
             filtered.append(d)
 
+    filtered.sort(key=lambda d: d.get("confidence", 0), reverse=True)
     defect_count = len(filtered)
     status = "DEFECTS DETECTED" if defect_count > 0 else "NO DEFECTS DETECTED"
     top_cls = filtered[0]["class_id"] if defect_count > 0 else None
     top_conf = filtered[0]["confidence"] if defect_count > 0 else 0.0
 
     return {
+        **result,
+        "threshold": confidence_threshold,
         "status": status,
         "defect_count": defect_count,
         "detections": filtered,
@@ -196,6 +207,8 @@ def predict_fusion(optical_image: Any, ct_image: Any, model: Any) -> Dict[str, A
     """
     Dual-branch optical+CT fusion model stub for backward compatibility.
     """
+    import torch
+    import torch.nn.functional as F
     model.eval()
     x_opt = _to_tensor(optical_image)
     x_ct = _to_tensor(ct_image)

@@ -48,18 +48,11 @@ def load_model(path: str, model_name: str = "yolo11n", num_classes: int = 6) -> 
         raise FileNotFoundError(f"Model checkpoint not found: {chk_path}")
 
     # Check if this is a YOLO model
-    if "yolo" in model_name.lower() or chk_path.suffix == ".pt":
-        try:
-            from ultralytics import YOLO
-            model = YOLO(str(chk_path))
-            try:
-                model.fuse()
-            except Exception:
-                pass
-            return model
-        except Exception:
-            # Fall back to PyTorch state_dict loading if not YOLO
-            pass
+    if "yolo" in model_name.lower():
+        from ultralytics import YOLO
+        # Preserve the original YOLO load error instead of hiding it behind a
+        # misleading classifier fallback. Fusion remains lazy inside the worker.
+        return YOLO(str(chk_path))
 
     from src.models.classifier import build_model
     model = build_model(num_classes, model_name, pretrained=False)
