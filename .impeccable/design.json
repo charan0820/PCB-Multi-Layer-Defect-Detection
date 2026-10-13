@@ -1,0 +1,279 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-13T13:54:01.212229+00:00",
+  "title": "Design System: Multilayer PCB Defect Detector",
+  "extensions": {
+    "colorMeta": {
+      "bg": {
+        "role": "neutral",
+        "displayName": "Board Background",
+        "tonalRamp": [
+          "oklch(15.00% 0.01833 176.73)",
+          "oklch(26.43% 0.01833 176.73)",
+          "oklch(37.86% 0.01833 176.73)",
+          "oklch(49.29% 0.01833 176.73)",
+          "oklch(60.71% 0.01833 176.73)",
+          "oklch(72.14% 0.01833 176.73)",
+          "oklch(83.57% 0.01833 176.73)",
+          "oklch(95.00% 0.01833 176.73)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Board Surface"
+      },
+      "raised": {
+        "role": "neutral",
+        "displayName": "Raised Surface"
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Routing Line"
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Silkscreen",
+        "tonalRamp": [
+          "oklch(15.00% 0.01159 153.67)",
+          "oklch(26.43% 0.01159 153.67)",
+          "oklch(37.86% 0.01159 153.67)",
+          "oklch(49.29% 0.01159 153.67)",
+          "oklch(60.71% 0.01159 153.67)",
+          "oklch(72.14% 0.01159 153.67)",
+          "oklch(83.57% 0.01159 153.67)",
+          "oklch(95.00% 0.01159 153.67)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted Silkscreen",
+        "tonalRamp": [
+          "oklch(15.00% 0.02748 159.42)",
+          "oklch(26.43% 0.02748 159.42)",
+          "oklch(37.86% 0.02748 159.42)",
+          "oklch(49.29% 0.02748 159.42)",
+          "oklch(60.71% 0.02748 159.42)",
+          "oklch(72.14% 0.02748 159.42)",
+          "oklch(83.57% 0.02748 159.42)",
+          "oklch(95.00% 0.02748 159.42)"
+        ]
+      },
+      "green": {
+        "role": "secondary",
+        "displayName": "Signal Green",
+        "tonalRamp": [
+          "oklch(15.00% 0.09976 158.47)",
+          "oklch(26.43% 0.09976 158.47)",
+          "oklch(37.86% 0.09976 158.47)",
+          "oklch(49.29% 0.09976 158.47)",
+          "oklch(60.71% 0.09976 158.47)",
+          "oklch(72.14% 0.09976 158.47)",
+          "oklch(83.57% 0.09976 158.47)",
+          "oklch(95.00% 0.09976 158.47)"
+        ]
+      },
+      "copper": {
+        "role": "primary",
+        "displayName": "Copper",
+        "tonalRamp": [
+          "oklch(15.00% 0.08976 62.53)",
+          "oklch(26.43% 0.08976 62.53)",
+          "oklch(37.86% 0.08976 62.53)",
+          "oklch(49.29% 0.08976 62.53)",
+          "oklch(60.71% 0.08976 62.53)",
+          "oklch(72.14% 0.08976 62.53)",
+          "oklch(83.57% 0.08976 62.53)",
+          "oklch(95.00% 0.08976 62.53)"
+        ]
+      },
+      "disabled-bg": {
+        "role": "neutral",
+        "displayName": "Disabled Surface",
+        "tonalRamp": [
+          "oklch(15.00% 0.03299 161.15)",
+          "oklch(26.43% 0.03299 161.15)",
+          "oklch(37.86% 0.03299 161.15)",
+          "oklch(49.29% 0.03299 161.15)",
+          "oklch(60.71% 0.03299 161.15)",
+          "oklch(72.14% 0.03299 161.15)",
+          "oklch(83.57% 0.03299 161.15)",
+          "oklch(95.00% 0.03299 161.15)"
+        ]
+      },
+      "disabled-text": {
+        "role": "neutral",
+        "displayName": "Disabled Text",
+        "tonalRamp": [
+          "oklch(15.00% 0.02891 157.14)",
+          "oklch(26.43% 0.02891 157.14)",
+          "oklch(37.86% 0.02891 157.14)",
+          "oklch(49.29% 0.02891 157.14)",
+          "oklch(60.71% 0.02891 157.14)",
+          "oklch(72.14% 0.02891 157.14)",
+          "oklch(83.57% 0.02891 157.14)",
+          "oklch(95.00% 0.02891 157.14)"
+        ]
+      },
+      "copper-hover": {
+        "role": "primary",
+        "displayName": "Copper Hover"
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Workspace heading",
+        "purpose": "Oversized light Barlow hero title, inspired by the supplied Wix reference."
+      },
+      "metric": {
+        "displayName": "Metric",
+        "purpose": "Tabular inspection and activity values in Barlow Condensed."
+      },
+      "title": {
+        "displayName": "Section heading",
+        "purpose": "Regular Barlow section headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Barlow text, native control labels and supporting copy."
+      }
+    },
+    "shadows": [
+      {
+        "name": "action-hover",
+        "value": "0 8px 20px #06110d60",
+        "purpose": "Primary action hover lift."
+      }
+    ],
+    "motion": [
+      {
+        "name": "pcb-ease",
+        "value": "cubic-bezier(.16, 1, .3, 1)",
+        "purpose": "Shared state easing."
+      },
+      {
+        "name": "control-transition",
+        "value": "240ms",
+        "purpose": "Button, tab and upload state changes."
+      },
+      {
+        "name": "field-transition",
+        "value": "220ms",
+        "purpose": "Input and select border changes."
+      },
+      {
+        "name": "panel-arrive",
+        "value": "380ms",
+        "purpose": "Tab-panel entrance from opacity .7 and translateY(8px); disabled for reduced motion."
+      },
+      {
+        "name": "trace-connect",
+        "value": "1.2s",
+        "purpose": "Decorative SVG signal draw; disabled for reduced motion."
+      },
+      {
+        "name": "anchor-scroll",
+        "value": "smooth",
+        "purpose": "Native smooth scrolling for page navigation; auto under reduced motion. Targets retain 80px toolbar clearance."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact",
+        "value": "1100px"
+      },
+      {
+        "name": "stacked",
+        "value": "768px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Inspection action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action for a ready inspection.",
+      "html": "<button class=\"ds-primary\">Inspect PCB</button>",
+      "css": ".ds-primary {font-family:\"Barlow\",sans-serif;min-height:50px;border:0;border-radius:0;color:var(--pcb-bg,#0b1714);font-weight:600;background:#dfa979;transition:background-color 240ms cubic-bezier(.16,1,.3,1),box-shadow 240ms cubic-bezier(.16,1,.3,1),transform 240ms cubic-bezier(.16,1,.3,1);} .ds-primary:not(:disabled):hover {background:#ecc09a;transform:translateY(-2px);box-shadow:0 8px 20px #06110d60;} .ds-primary:focus-visible {outline:2px solid var(--pcb-green,#88d6aa);outline-offset:3px;} .ds-primary:disabled {opacity:1;background:#293e33;color:#9cb0a3;cursor:not-allowed;} @media(prefers-reduced-motion:reduce){.ds-primary{transition:none}.ds-primary:hover{transform:none}} .ds-primary:not(:disabled):active{transform:translateY(0);box-shadow:none;}"
+    },
+    {
+      "name": "Unavailable inspection action",
+      "kind": "button",
+      "refersTo": "button-disabled",
+      "description": "Opaque disabled inspection action while input or a supported detector is unavailable.",
+      "html": "<button class=\"ds-disabled\" disabled>Inspect PCB</button>",
+      "css": ".ds-disabled{font-family:Barlow,sans-serif;min-height:50px;border:0;border-radius:0;background:#293e33;color:#9cb0a3;opacity:1;cursor:not-allowed;font-weight:600}"
+    },
+    {
+      "name": "Board identifier",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Native text field with the authored control dimensions.",
+      "html": "<label class=\"ds-label\">PCB / batch identifier<input class=\"ds-input\" placeholder=\"e.g. PCB-042 / Batch A\"></label>",
+      "css": ".ds-label {font-family:\"Barlow\",sans-serif;color:var(--pcb-text,#edf5ef);display:grid;gap:.5rem;} .ds-input {font-family:\"Barlow\",sans-serif;font-size:1rem;min-height:46px;border:1px solid var(--pcb-line,#456451);border-radius:0;background:var(--pcb-surface,#1b3027);color:var(--pcb-text,#edf5ef);caret-color:var(--pcb-green,#88d6aa);} .ds-input:focus-visible {outline:2px solid var(--pcb-green,#88d6aa);outline-offset:3px;} .ds-input{transition:border-color 220ms cubic-bezier(.16,1,.3,1)} @media(prefers-reduced-motion:reduce){.ds-input{transition:none}}"
+    },
+    {
+      "name": "Workflow navigation",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Full-width workflow tabs separated by fine dividers; selection uses copper.",
+      "html": "<nav class=\"ds-tabs\" aria-label=\"Workflow\"><button class=\"ds-tab ds-selected\">Inspect a PCB</button><button class=\"ds-tab\">Scan history</button><button class=\"ds-tab\">Scope &amp; setup</button></nav>",
+      "css": ".ds-tabs{display:flex;width:100%;background:#0b1714;border-bottom:1px solid #456451}.ds-tab{flex:1;min-height:50px;border:0;border-right:1px solid #456451;border-radius:0;padding:.5rem 1.25rem;background:transparent;color:#b0c4b8;font-family:Barlow,sans-serif}.ds-selected{background:#dfa979;color:#0b1714}.ds-tab:focus-visible{outline:2px solid #88d6aa;outline-offset:-4px}"
+    },
+    {
+      "name": "Defect legend",
+      "kind": "chip",
+      "refersTo": "defect-chip",
+      "description": "Passive supported-defect label.",
+      "html": "<span class=\"ds-chip\">mousebite</span>",
+      "css": ".ds-chip {font-family:\"Barlow\",sans-serif;display:inline-block;font-size:.85rem;color:var(--pcb-muted,#b0c4b8);padding:.35rem .75rem;background:var(--pcb-raised,#243e31);border-radius:0;}"
+    },
+    {
+      "name": "Image intake",
+      "kind": "card",
+      "refersTo": "intake",
+      "description": "Tonal bordered container for image controls.",
+      "html": "<section class=\"ds-intake\"><h3>Image intake</h3><p>Identify the board, select an image, and run your inspection.</p></section>",
+      "css": ".ds-intake {font-family:\"Barlow\",sans-serif;color:var(--pcb-text,#edf5ef);background:var(--pcb-surface,#1b3027);border:1px solid var(--pcb-line,#456451);border-radius:0;padding:1.5rem}.ds-intake h3{font-family:\"Barlow\",sans-serif;font-size:1.75rem;font-weight:400;letter-spacing:-.01em}.ds-intake p{color:var(--pcb-muted,#b0c4b8);line-height:1.55}@media(max-width:1100px){.ds-intake{padding:1.25rem}}"
+    },
+    {
+      "name": "Inspection metric",
+      "kind": "card",
+      "refersTo": "metric",
+      "description": "Compact value panel with tabular numerals.",
+      "html": "<article class=\"ds-metric\"><div class=\"ds-metric-label\">Defect regions</div><div class=\"ds-metric-value\">6</div></article>",
+      "css": ".ds-metric{font-family:Barlow,sans-serif;color:var(--pcb-text,#edf5ef);background:var(--pcb-raised,#243e31);padding:1rem;border-radius:0;min-height:112px}.ds-metric-label{color:var(--pcb-muted,#b0c4b8)}.ds-metric-value{font-family:\"Barlow Condensed\",sans-serif;font-variant-numeric:tabular-nums;font-size:clamp(1.3rem,2.2vw,2rem)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Board Workspace",
+    "overview": "The supplied Wix wh-1081 template guides the composition: oversized light sans-serif lettering, wireframe geometry behind the title, sparse navigation, thin dividers, square edges and a broad action band. The detector adapts these devices to PCB layers and the existing solid green/copper palette, rather than importing financial content or claims.",
+    "keyCharacteristics": [
+      "Oversized light sans-serif typography",
+      "Flat stacked-PCB wireframe artwork",
+      "Square edges and thin divider lines",
+      "Solid green surfaces and broad copper action bands"
+    ],
+    "rules": [
+      {
+        "name": "The 60-30-10 Rule",
+        "body": "Approximate visual allocation: 60% deep green ground, 30% supporting green surfaces, 10% combined copper and signal-green accents.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reference Rule",
+        "body": "Borrow composition and visual grammar while preserving detector functionality and factual scope.",
+        "section": "typography"
+      }
+    ],
+    "dos": [
+      "Use real workspace and scope links.",
+      "Keep solid green dominant.",
+      "Preserve visible focus and reduced motion."
+    ],
+    "donts": [
+      "Do not introduce gradients or rounded dashboard panels.",
+      "Do not claim decorative layers are scan output."
+    ]
+  }
+}

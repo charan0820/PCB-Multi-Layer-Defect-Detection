@@ -1,0 +1,117 @@
+/* Barlow typography and a canvas-first PCB inspection workbench. */
+:root {
+  --pcb-bg: #0b1714;
+  --pcb-surface: #1b3027;
+  --pcb-raised: #243e31;
+  --pcb-line: #456451;
+  --pcb-text: #edf5ef;
+  --pcb-muted: #b0c4b8;
+  --pcb-green: #88d6aa;
+  --pcb-copper: #dfa979;
+  --pcb-copper-hover: #ecc09a;
+  --pcb-radius: 0px;
+  --pcb-ease: cubic-bezier(.16, 1, .3, 1);
+}
+.stApp { background: var(--pcb-bg); color: var(--pcb-text); }
+.stApp, .stApp input, .stApp textarea, .stApp button, .stApp p, .stApp select, .stApp [role="combobox"] { font-family: 'Barlow', sans-serif; }
+::selection { background: var(--pcb-green); color: var(--pcb-bg); }
+* { scrollbar-color: var(--pcb-line) var(--pcb-bg); scrollbar-width: thin; }
+input, textarea { caret-color: var(--pcb-green); }
+html, [data-testid="stMain"] { scroll-behavior: smooth; }
+a { text-underline-offset: 3px; }
+[data-testid="stHeader"] { background: var(--pcb-bg); }
+[data-testid="stMainBlockContainer"] { max-width: 1600px; padding: 4.5rem 1.75rem 3rem; }
+.studio-navigation { display: flex; justify-content: space-between; align-items: center; padding: .75rem 0 1.5rem; border-bottom: 1px solid var(--pcb-line); }
+.studio-navigation a { color: var(--pcb-text); text-decoration: none; }
+.studio-wordmark { text-transform: uppercase; font-size: 1.05rem; }
+.studio-navigation nav { display: flex; gap: 2rem; }
+.studio-navigation nav a { padding: .5rem 0; transition: color 240ms var(--pcb-ease); }
+.studio-navigation nav a:hover { color: var(--pcb-copper); }
+.studio-header { position: relative; display: flex; flex-direction: column; justify-content: space-between; min-height: 490px; padding: 2rem 0 0; border-bottom: 1px solid var(--pcb-line); overflow: hidden; }
+.studio-heading { position: relative; z-index: 1; }
+.studio-heading h1 { font-family: 'Barlow', sans-serif; font-size: clamp(3rem, 8vw, 7rem); font-weight: 400; line-height: .98; letter-spacing: -.035em; text-transform: none; padding: 0; margin: 0; }
+.layer-stack { position: absolute; width: 78%; right: -2%; top: 6rem; opacity: .65; pointer-events: none; }
+.hero-bottom { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; align-items: end; margin-top: 3rem; }
+.hero-bottom p { font-size: 1.1rem; line-height: 1.3; margin: 0; padding: 1.25rem 0; color: var(--pcb-text); }
+.workspace-link { background: var(--pcb-copper); color: var(--pcb-bg) !important; padding: 1.5rem 1.75rem; text-decoration: none; text-transform: uppercase; font-size: 1.15rem; transition: background-color 240ms var(--pcb-ease); }
+.workspace-link:hover { background: var(--pcb-copper-hover); }
+.workspace-link:focus-visible, .studio-navigation a:focus-visible { outline: 2px solid var(--pcb-green); outline-offset: -4px; }
+.workspace-anchor { scroll-margin-top: 80px; }
+.studio-capabilities { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 2rem; color: var(--pcb-muted); font-size: .85rem; padding: 1rem 0; border-bottom: 1px solid var(--pcb-line); }
+.studio-capabilities span:first-child { color: var(--pcb-green); }
+.pcb-routing { width: 100%; display: block; }
+h2, h3 { font-family: 'Barlow', sans-serif !important; font-weight: 400; letter-spacing: -.025em; text-wrap: balance; }
+h2 { font-size: 1.75rem; }
+h3 { font-size: 1.4rem; }
+[data-testid="stMarkdownContainer"] p { line-height: 1.55; }
+[data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p, [data-testid="stImageCaption"] { color: var(--pcb-muted); }
+.st-key-configuration { padding: 1.25rem 1.5rem .75rem; border-radius: 0; background: var(--pcb-surface); border: 1px solid var(--pcb-line); }
+.st-key-configuration [data-testid="stHorizontalBlock"] { align-items: start; }
+[data-testid="stExpander"] { border: 1px solid var(--pcb-line); border-radius: 0; }
+[data-testid="stExpander"] details[open] { background: var(--pcb-surface); }
+[data-testid="stTabs"] [role="tablist"] { gap: 0; padding: 0; background: var(--pcb-bg); border-bottom: 1px solid var(--pcb-line); width: 100%; max-width: 100%; }
+[data-testid="stTabs"] [role="tab"] { min-height: 50px; flex: 1; padding: .5rem 1.25rem; border-right: 1px solid var(--pcb-line); color: var(--pcb-muted); transition: color 240ms var(--pcb-ease), background-color 240ms var(--pcb-ease); }
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] { background: var(--pcb-copper); color: var(--pcb-bg); }
+[data-testid="stTabs"] [role="tab"][aria-selected="false"]:hover { background: var(--pcb-raised); color: var(--pcb-text); }
+[data-testid="stTabs"] [role="tabpanel"] { padding-top: 1.5rem; animation: panel-arrive 380ms var(--pcb-ease); }
+@keyframes panel-arrive { from { opacity: .7; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.st-key-intake { padding: 1.5rem; gap: .75rem; border-radius: 0; border: 1px solid var(--pcb-line); background: var(--pcb-surface); }
+.st-key-intake [data-testid="stVerticalBlock"] { gap: .75rem; }
+:is(.st-key-workbench, .st-key-workbench > [data-testid="stLayoutWrapper"]) > [data-testid="stHorizontalBlock"] { gap: 2rem; }
+.st-key-intake h2, .st-key-preview h2 { padding-top: 0; font-size: 1.75rem; }
+.st-key-preview { min-width: 0; }
+.st-key-preview [data-testid="stImage"] img { max-height: 560px; object-fit: contain; border-radius: 0; background: var(--pcb-surface); }
+.empty-preview { min-height: 390px; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem; text-align: center; border: 1px solid var(--pcb-line); border-radius: 0; background: var(--pcb-surface); }
+.empty-preview .pcb-routing { width: min(100%, 440px); margin-bottom: 2rem; }
+.empty-preview h3 { font-size: 2rem; margin: 0 0 .75rem; }
+.empty-preview p { max-width: 40ch; color: var(--pcb-muted); line-height: 1.6; margin: 0; }
+.preview-formats { font-size: .8rem; color: var(--pcb-copper); margin-top: 1.25rem; }
+.st-key-defect_taxonomy { padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--pcb-line); }
+.defect-legend { display: flex; flex-wrap: wrap; gap: .5rem; }
+.defect-legend span { color: var(--pcb-muted); font-size: .85rem; padding: .35rem .75rem; background: var(--pcb-raised); border-radius: 0; }
+[data-testid="stFileUploaderDropzone"] { min-height: 112px; background: var(--pcb-bg); border: 1px dashed var(--pcb-line); border-radius: 0; transition: border-color 240ms var(--pcb-ease), background-color 240ms var(--pcb-ease); }
+[data-testid="stFileUploaderDropzone"]:hover { border-color: var(--pcb-copper); background: var(--pcb-surface); }
+[data-testid="stTextInput"] input { font-size: 1rem; }
+input::placeholder { color: var(--pcb-muted); opacity: 1; }
+[data-testid="stTextInput"] [data-baseweb="input"], [data-testid="stSelectbox"] [data-baseweb="select"] > div { min-height: 46px; border-radius: 0; border-color: var(--pcb-line); transition: border-color 220ms var(--pcb-ease); }
+[data-testid="stButton"] button, [data-testid="stDownloadButton"] button, [data-testid="stFileUploader"] button { min-height: 46px; border-radius: 0; transition: background-color 240ms var(--pcb-ease), border-color 240ms var(--pcb-ease), box-shadow 240ms var(--pcb-ease), transform 240ms var(--pcb-ease); }
+[data-testid="stButton"] button[kind="primary"] { color: var(--pcb-bg); border: 0; background: var(--pcb-copper); font-weight: 600; min-height: 50px; }
+[data-testid="stButton"] button[kind="primary"]:not(:disabled):hover { background: var(--pcb-copper-hover); transform: translateY(-2px); box-shadow: 0 8px 20px #06110d60; }
+[data-testid="stButton"] button[kind="primary"]:not(:disabled):active { transform: translateY(0); box-shadow: none; }
+[data-testid="stButton"] button:disabled { background: #293e33; color: #9cb0a3; opacity: 1; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, [role="tab"]:focus-visible, [role="combobox"]:focus-visible { outline: 2px solid var(--pcb-green) !important; outline-offset: 3px; }
+[data-testid="stMetric"] { padding: 1rem; border-radius: 0; background: var(--pcb-raised); min-height: 112px; }
+[data-testid="stMetricValue"] { font-family: 'Barlow Condensed', sans-serif; font-variant-numeric: tabular-nums; font-size: clamp(1.3rem, 2.2vw, 2rem); white-space: normal; }
+[data-testid="stMetricLabel"] { color: var(--pcb-muted); }
+[data-testid="stAlert"] { border-radius: 0; }
+@media (max-width: 1100px) {
+  [data-testid="stMainBlockContainer"] { padding: 4.5rem 1.5rem 2rem; }
+  :is(.st-key-workbench, .st-key-workbench > [data-testid="stLayoutWrapper"]) > [data-testid="stHorizontalBlock"] { gap: 1.5rem; }
+  .st-key-intake { padding: 1.25rem; }
+}
+@media (max-width: 768px) {
+  [data-testid="stMainBlockContainer"] { padding: 4.5rem 1rem 2rem; }
+  .studio-header { min-height: 360px; padding-top: 1.5rem; }
+  .studio-heading { z-index: 1; }
+  .studio-heading h1 { font-size: clamp(2.1rem, 9.5vw, 4rem); }
+  .layer-stack { width: 135%; top: 5rem; right: -30%; opacity: .45; }
+  .hero-bottom { grid-template-columns: 1fr; margin-top: 2rem; }
+  .hero-bottom p { font-size: 1rem; }
+  .workspace-link { padding: 1rem; font-size: .95rem; }
+  .studio-navigation nav { gap: 1rem; font-size: .9rem; }
+  .studio-wordmark { font-size: .9rem; }
+  .st-key-configuration { padding: 1rem; }
+  .st-key-configuration [data-testid="stHorizontalBlock"], .st-key-workbench > [data-testid="stLayoutWrapper"] > [data-testid="stHorizontalBlock"], .st-key-workbench > [data-testid="stHorizontalBlock"] { flex-direction: column; gap: 1.25rem; }
+  .st-key-configuration [data-testid="stColumn"], :is(.st-key-workbench, .st-key-workbench > [data-testid="stLayoutWrapper"]) > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] { width: 100% !important; flex: auto !important; }
+  :is(.st-key-workbench, .st-key-workbench > [data-testid="stLayoutWrapper"]) > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:first-child { order: 2; }
+  :is(.st-key-workbench, .st-key-workbench > [data-testid="stLayoutWrapper"]) > [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:last-child { order: 1; }
+  [data-testid="stTabs"] [role="tab"] { padding: .5rem .7rem; }
+  [data-testid="stTabs"] [role="tab"] p { font-size: .85rem; }
+  .empty-preview { min-height: 340px; padding: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html, [data-testid="stMain"] { scroll-behavior: auto; }
+  [data-testid="stTabs"] [role="tabpanel"] { animation: none; }
+  .workspace-link, .studio-navigation a, [data-testid="stButton"] button, [data-testid="stDownloadButton"] button, [data-testid="stFileUploader"] button, [data-testid="stFileUploaderDropzone"], [data-baseweb="input"], [data-baseweb="select"] > div, [role="tab"] { transition: none !important; }
+  [data-testid="stButton"] button[kind="primary"]:hover { transform: none; }
+}

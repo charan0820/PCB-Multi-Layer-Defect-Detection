@@ -10,8 +10,10 @@ import uuid
 
 os.environ["STREAMLIT_SERVER_FILE_WATCHER_TYPE"] = "none"
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# Streamlit puts app/ first; put the project package ahead of app/app.py.
+if str(ROOT) in sys.path:
+    sys.path.remove(str(ROOT))
+sys.path.insert(0, str(ROOT))
 
 import streamlit as st
 from src.application.inspection import (
@@ -22,8 +24,9 @@ from src.application.reports import build_report, render_overlay, report_payload
 from src.application.history import save_scan, statistics
 from src.inference.predict import filter_detections
 from src.utils.config import load_config
+from app.theme import APP_TITLE, apply_theme, studio_header, empty_preview, defect_legend
 
-st.set_page_config(page_title="PCB Inspection Studio", page_icon="🔬", layout="wide")
+st.set_page_config(page_title=APP_TITLE, page_icon=":material/memory:", layout="wide", initial_sidebar_state="collapsed")
 LOGGER = logging.getLogger("pcb.app")
 
 
@@ -119,8 +122,8 @@ def show_history(db_path, mode):
     st.caption("History is filtered by inspection mode. Older scans without a recorded mode remain in SQLite and are excluded from these totals.")
     if stats["records"]:
         left, right = st.columns(2)
-        left.bar_chart(stats["timeline"], x_label="Hour (UTC)", y_label="Scans")
-        right.bar_chart(stats["types"], x_label="Defect type", y_label="Regions")
+        left.bar_chart(stats["timeline"], x_label="Hour (UTC)", y_label="Scans", color="#88d6aa")
+        right.bar_chart(stats["types"], x_label="Defect type", y_label="Regions", color="#88d6aa")
         st.dataframe([{"UTC time": r["created_at"], "PCB": r["pcb_id"], "File": r["filename"],
                        "Defects": r["defect_count"], "Cutoff": r["threshold"], "Scan ID": r["scan_id"]}
                       for r in stats["records"]], hide_index=True)
@@ -131,43 +134,49 @@ def show_history(db_path, mode):
 
 def main():
     enable_diagnostics()
-    st.title("PCB Inspection Studio")
-    st.caption("Surface • Optical B/W • CT scans • traceable scan reports")
+    apply_theme()
     config = load_config(str(ROOT / "config.yaml"))
     db_path = ROOT / config.get("application", {}).get("database", "outputs/inspection.sqlite3")
-    st.sidebar.header("Inspection settings")
-    mode = st.sidebar.selectbox("Inspection mode", list(MODES), index=1,
-                                format_func=lambda value: MODES[value]["label"], key="inspection_mode")
-    st.caption(MODES[mode]["scope"])
+    studio_header(MODES[st.session_state.get("inspection_mode", "optical_bw")]["label"])
+    st.html('<div id="inspection-workspace" class="workspace-anchor"></div>')
+    with st.container(key="configuration"):
+        mode_column, device_column, threshold_column = st.columns([1, 1, 1.3], gap="large")
+        mode = mode_column.selectbox("Inspection mode", list(MODES), index=1,
+                                    format_func=lambda value: MODES[value]["label"], key="inspection_mode")
     if mode == "ct":
+        st.html('<div id="inspection-scope" class="workspace-anchor"></div>')
+        st.caption(MODES[mode]["scope"])
         st.info("CT scans — Not configured")
         st.write("CT requires its own model, volume/slice processing and labeled validation. PCB-CTSeg is a proposed starting point for pads, traces and vias segmentation; these structural labels do not establish manufacturing fault detection.")
         return
     # Non-widget state survives Streamlit's cleanup when another mode is selected.
     settings = st.session_state.setdefault("mode_settings", {})
     inference = settings.setdefault(mode, mode_defaults(config, mode))
-    selected = st.sidebar.text_input("Trained checkpoint", value=inference["checkpoint"], key=f"checkpoint_{mode}")
-    device = st.sidebar.selectbox("Inference device", ["cpu", "0"],
+    device = device_column.selectbox("Inference device", ["cpu", "0"],
                                   index=1 if inference.get("device") == "0" else 0,
                                   format_func=lambda d: "CPU (stable baseline)" if d == "cpu" else "CUDA GPU 0", key=f"device_{mode}")
-    threshold = st.sidebar.slider("Confidence threshold", 0.05, 0.95,
+    threshold = threshold_column.slider("Confidence threshold", 0.05, 0.95,
                                   float(inference.get("confidence_threshold", 0.25)), 0.05, key=f"threshold_{mode}")
-    imgsz = st.sidebar.selectbox("Inference image size", [320, 640, 960, 1280],
-                                index=[320, 640, 960, 1280].index(inference.get("imgsz", 640)), key=f"imgsz_{mode}")
-    iou = st.sidebar.slider("IoU threshold", 0.1, 0.9, float(inference.get("iou_threshold", 0.45)), 0.05, key=f"iou_{mode}")
+    with st.expander("Model & advanced settings"):
+        selected = st.text_input("Trained checkpoint", value=inference["checkpoint"], key=f"checkpoint_{mode}")
+        imgsz = st.selectbox("Inference image size", [320, 640, 960, 1280],
+                            index=[320, 640, 960, 1280].index(inference.get("imgsz", 640)), key=f"imgsz_{mode}")
+        iou = st.slider("IoU threshold", 0.1, 0.9, float(inference.get("iou_threshold", 0.45)), 0.05, key=f"iou_{mode}")
     inference.update(checkpoint=selected, device=device, confidence_threshold=threshold, imgsz=imgsz, iou_threshold=iou)
-    st.sidebar.caption("Adjusting the cutoff filters cached candidates; it does not run the model again.")
-    st.sidebar.subheader("Supported defects")
-    st.sidebar.caption(", ".join(sorted(MODES[mode]["classes"])))
-    inspect, history, setup = st.tabs(["Inspect a PCB", "Scan history", "Scope & presentation setup"])
+    inspect, history, setup = st.tabs(["Inspect a PCB", "Scan history", "Scope & setup"])
     with inspect:
-        st.subheader("Upload and inspect")
-        st.write("Give the PCB an identifier, choose an image, then run an inspection.")
-        pcb_id = st.text_input("PCB / batch identifier", max_chars=100)
-        uploaded = st.file_uploader(f'{MODES[mode]["label"]} image', type=["png", "jpg", "jpeg"], key=f"upload_{mode}")
-        sample_dir = ROOT / "data/deeppcb_yolo/images/val" if mode == "optical_bw" else ROOT / config["data"]["raw_dir"] / "val" / "images"
-        samples = sorted(sample_dir.glob("*.jpg"))[:20]
-        sample = st.selectbox("Or use a local validation sample", [None, *samples], format_func=lambda p: p.name if p else "Choose a sample", key=f"sample_{mode}") if samples else None
+        with st.container(key="workbench"):
+            preview_column, intake_column = st.columns([1.85, 1], gap="large")
+        with intake_column:
+            with st.container(key="intake"):
+                st.header("Image intake")
+                st.caption("Identify the board, select an image, and run your inspection.")
+                pcb_id = st.text_input("PCB / batch identifier", max_chars=100, placeholder="e.g. PCB-042 / Batch A")
+                uploaded = st.file_uploader(f'{MODES[mode]["label"]} image', type=["png", "jpg", "jpeg"], key=f"upload_{mode}")
+                sample_dir = ROOT / "data/deeppcb_yolo/images/val" if mode == "optical_bw" else ROOT / config["data"]["raw_dir"] / "val" / "images"
+                samples = sorted(sample_dir.glob("*.jpg"))[:20]
+                sample = st.selectbox("Or use a local validation sample", [None, *samples], format_func=lambda p: p.name if p else "Choose a sample", key=f"sample_{mode}") if samples else None
+                action_slot = st.container()
         data, filename = None, None
         if uploaded is not None:
             data, filename = uploaded.getvalue(), uploaded.name
@@ -182,8 +191,8 @@ def main():
                 st.error(f'This checkpoint does not match the {MODES[mode]["label"]} taxonomy. Select its PCB-trained best.pt. Generic yolo11n.pt / yolo26n.pt weights cannot inspect PCB defects.')
                 checkpoint = None
             else:
-                st.sidebar.success(f"PCB model ready: {checkpoint.name}")
-                st.sidebar.write(", ".join(info["names"]).replace("_", " "))
+                with action_slot:
+                    st.caption(f"PCB model ready · {checkpoint.name}")
         except Exception as exc:
             LOGGER.exception("Checkpoint unavailable")
             st.error(str(exc))
@@ -197,7 +206,12 @@ def main():
             except Exception as exc:
                 LOGGER.exception("Image rejected")
                 st.error(f"Cannot read this image: {exc}")
-        scan = st.button("Inspect PCB", type="primary", disabled=image is None or checkpoint is None)
+        with action_slot:
+            scan = st.button("Inspect PCB", type="primary", disabled=image is None or checkpoint is None, width="stretch")
+            if image is None:
+                st.caption("Select an image to enable inspection.")
+            elif checkpoint is None:
+                st.caption("Configure a compatible PCB checkpoint to inspect this image.")
         if scan:
             try:
                 if st.session_state.get("raw_key") != key:
@@ -214,10 +228,17 @@ def main():
                 st.session_state.pop("snapshot", None)
                 LOGGER.exception("Inspection failed")
                 st.error(str(exc))
-        if key is not None and st.session_state.get("snapshot_key") == key and "snapshot" in st.session_state:
-            show_result(st.session_state["snapshot"], threshold, db_path)
-        elif image is not None:
-            st.image(image, caption=f"Ready to inspect: {filename}", width="stretch")
+        has_result = key is not None and st.session_state.get("snapshot_key") == key and "snapshot" in st.session_state
+        with preview_column:
+            with st.container(key="preview"):
+                st.header("Board workspace")
+                if has_result:
+                    show_result(st.session_state["snapshot"], threshold, db_path)
+                elif image is not None:
+                    st.image(image, caption=f"{'Inspected' if has_result else 'Ready to inspect'}: {filename}", width="stretch")
+                    st.caption(f"{image.width:,} × {image.height:,} px · {MODES[mode]['label']} · Original image")
+                else:
+                    empty_preview()
     with history:
         show_history(db_path, mode)
     with setup:
@@ -229,6 +250,12 @@ def main():
         st.markdown("1. PCB held flat in a repeatable positioning jig inside a matte enclosure.\n2. Overhead USB camera with a close-focus lens on a fixed stand.\n3. Diffuse ring light powered from a suitable supply; avoid reflections.\n4. Camera USB → laptop running this app. Save a PNG/JPEG and use the same upload pipeline.\n5. Validate on labeled images from the actual camera before reporting hardware accuracy.")
         st.write("DeepPCB supplies paired optical images, not CT data. A CT model will require an appropriate CT dataset and imaging source; it is a later phase.")
         st.caption("Camera integration and CT processing are future work. CT scans remain Not configured.")
+    with st.container(key="defect_taxonomy"):
+        st.html('<div id="inspection-scope" class="workspace-anchor"></div>')
+        st.caption(MODES[mode]["scope"])
+        st.caption("Supported defects for this inspection mode")
+        defect_legend(MODES[mode]["classes"])
+        st.caption("Confidence changes filter cached candidates without running inference again.")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,4 @@
-# PCB Inspection Studio
+# Multilayer PCB Defect Detector
 
 The application has three modes: **Surface**, **Optical B/W** and **CT scans**.
 Surface uses the original surface detector; Optical B/W uses the separate DeepPCB
@@ -12,6 +12,28 @@ the database and are excluded from mode-specific totals. Checkpoints with the wr
 mode's taxonomy and generic pretrained models are rejected.
 
 See [TRAINING_REVIEW.md](TRAINING_REVIEW.md) for the completed local DeepPCB run.
+
+## Frontend theme
+
+The inspection workspace uses solid solder-mask greens, copper pads and
+circuit routing artwork. A horizontal configuration bar sits above a dominant
+board canvas and right-hand image intake panel. On smaller screens, the intake
+panel moves ahead of the canvas. Locally bundled Barlow Condensed headings and
+Barlow body text establish the typography; their license is in `app/assets/fonts/OFL.txt`.
+Model configuration stays under **Model & advanced settings**. Tab changes and
+control states use eased transitions with reduced-motion support.
+Colour follows an approximate 60–30–10 hierarchy: deep board green for the
+dominant background, lighter green for workspace surfaces, and restrained
+copper/signal-green accents for actions, navigation and board details.
+The latest composition follows the supplied Wix wh-1081 reference: a large,
+light sans-serif title over decorative PCB wireframes, simple anchor navigation,
+square controls, fine dividers, and a wide copper link into the inspection workspace.
+
+Theme defaults live in `.streamlit/config.toml`; reusable presentation styles
+and helpers live in `app/studio.css` and `app/theme.py`. Circuit entrance motion
+and interaction transitions respect the system's reduced-motion preference.
+Restart Streamlit after editing the theme configuration or Python helpers
+(file watching is disabled), then reload the browser.
 
 ## DeepPCB training
 
