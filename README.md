@@ -39,6 +39,33 @@ Restart Streamlit after editing the theme configuration or Python helpers
 
 Start with [START_TRAINING.md](START_TRAINING.md). Includes dataset conversion, paired-image retention, provenance, GPU training, resume and held-out test evaluation. The app accepts DeepPCB classes `open`, `short`, `mousebite`, `spur`, `copper`, `pin-hole` as well as the original taxonomy.
 
+## Storage and dataset retention
+
+Uploaded-image inference does not require training datasets. Keep the trained
+checkpoints at `runs/pcb_defect/baseline/weights/best.pt` and
+`runs/deeppcb/yolo11n_baseline/weights/best.pt`, along with the application source,
+configuration, fonts and Python environment. Keep `outputs/inspection.sqlite3`
+if you want to retain scan history.
+
+`data/raw/pcb-defect-dataset` (about 1.11 GiB locally) and `data/deeppcb_yolo`
+(about 121 MiB locally) may be archived or removed for an inference-only setup.
+Their removal disables the local validation-sample selector for the respective
+mode and prevents dataset-based evaluation, retraining and dataset integration
+tests until the data is restored. Preserve dataset manifests, split information,
+source terms and evaluation reports when archiving for reproducibility.
+
+The final DeepPCB held-out test evaluation is complete; see
+[TEST_EVALUATION.md](TEST_EVALUATION.md) for overall/per-class scores and the frozen
+protocol. Archive the data and provenance if future reproduction is important.
+Delete dataset directories only, not the entire `data` folder: it also contains
+tracked Python source and the dataset YAML.
+
+Project cleanup removed empty staging directories, placeholder notebooks,
+an identical duplicate pretrained-weight folder, generated frontend screenshots,
+and Python/test caches. Active training runs, trained checkpoints, evaluation
+evidence and datasets were retained. Caches and output directories are recreated
+by their tools when needed.
+
 ## Run the repaired application
 
 Use Python 3.10–3.12. From the extracted project root:

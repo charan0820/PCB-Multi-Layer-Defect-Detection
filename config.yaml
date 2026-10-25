@@ -8,7 +8,6 @@ image:
 data:
   yaml_path: "data/pcb_defect.yaml"
   raw_dir: "data/raw/pcb-defect-dataset"
-  splits_dir: "data/splits"
   seed: 42
 
 model:

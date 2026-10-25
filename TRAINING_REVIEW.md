@@ -49,9 +49,10 @@ mAP@50 80.426%, mAP@50–95 36.903%. This is a separate preliminary artifact, no
 the completed DeepPCB detector or proof that the intended final surface model
 has been supplied.
 
-The official 500-image DeepPCB test split has **not** been evaluated during
-this continuation. Freeze the checkpoint and evaluation settings before the
-final test. Validation source groups are disjoint from training, but the official
+At the time of the 12 October validation review, the official 500-image DeepPCB
+test split had not been evaluated. The frozen held-out test was completed on
+14 October 2026; see [TEST_EVALUATION.md](TEST_EVALUATION.md). Validation source
+groups are disjoint from training, but the official
 test shares some groups with train/validation; it is not a board-disjoint test.
 This optical dataset and detector do not establish CT capability or real-camera
 performance. CT remains Not configured.

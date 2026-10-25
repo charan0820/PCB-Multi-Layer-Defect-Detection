@@ -71,8 +71,11 @@ Resume restores saved run settings, including batch/epochs; it is not a new run.
 After choosing the final checkpoint using validation only, evaluate the test split:
 
 ```bat
-python scripts\train_deeppcb.py --evaluate runs\deeppcb\yolo11n_baseline\weights\best.pt
+python scripts\evaluate_deeppcb.py --checkpoint runs\deeppcb\yolo11n_baseline\weights\best.pt
 ```
+
+The evaluation script verifies the official 500-image split and writes a frozen
+protocol, integrity inventory, JSON/CSV scores and plots under `outputs/reports/`.
 
 Do not repeatedly tune on the test results. Dataset tests use standard YOLO metrics;
 DeepPCB's original benchmark uses a different IoU criterion, so published scores
